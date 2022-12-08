@@ -1,0 +1,17 @@
+{
+  "name": "ethereum-basics-crypt-examples",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "npx ts-node main.ts"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
