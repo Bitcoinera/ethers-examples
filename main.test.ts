@@ -68,17 +68,14 @@ describe("transaction checks", () => {
     const minedTx = await provider.getTransaction(tx.hash);
     expect(minedTx.from).toEqual(wallet.address);
   });
-  it.only("errors with 'from address mismatch'", () => {
+  it.only("errors with 'from address mismatch'", async () => {
     const rawTxWrongFrom = {
       ...rawTx,
       from: "0xddddddddddddddddddddddddddddddddddddd6",
     };
-    try {
-      wallet.checkTransaction(rawTxWrongFrom);
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-      expect(error.message).toBe("from address mismatch");
-    }
+    await expect(async () => {
+      await wallet.checkTransaction(rawTxWrongFrom);
+    }).rejects.toThrow(TypeError("from address mismatch"));
   });
   it("errors with 'invalid transaction key: unicorn'", () => {
     const rawTxWrongKey = <TransactionRequest>{
