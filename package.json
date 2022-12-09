@@ -5,13 +5,14 @@
   "license": "MIT",
   "scripts": {
     "start": "npx ts-node main.ts",
-    "test": "npx ts-node test.ts"
+    "test": "jest"
   },
   "devDependencies": {
-    "@types/chai": "^4.3.4",
-    "chai": "^4.3.7",
+    "@types/jest": "^29.2.4",
     "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
+    "jest": "^29.3.1",
+    "ts-jest": "^29.0.3",
     "typescript": "^4.9.4"
   },
   "dependencies": {
