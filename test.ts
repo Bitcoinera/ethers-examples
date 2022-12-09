@@ -1,3 +1,4 @@
+import { TransactionRequest } from "@ethersproject/abstract-provider";
 import * as ethers from "ethers";
 import { BytesLike } from "ethers";
 import { expect } from "chai";
@@ -69,4 +70,40 @@ console.log(
   console.log(
     `Check that the transaction is sent by our address:\n${minedTx.from}\n${address}\n`
   );
+})();
+
+// Errors in the transaction verification
+(async () => {
+  const wallet = new ethers.Wallet(signingKey.privateKey);
+
+  // Validate the from field before signing and sending the transaction
+  // Error: from address mismatch
+  const rawTx = {
+    to: "0xddB51f100672Cb252C67D516eb79931bf27cE3E6",
+    value: ethers.utils.parseEther("0.001"),
+    data: ethers.utils.toUtf8Bytes("Hello World"),
+    nonce: await provider.getTransactionCount(wallet.address),
+    gasLimit: 25000,
+    gasPrice: await provider.getGasPrice(),
+    from: "0xddddddddddddddddddddddddddddddddddddd6",
+  };
+
+  try {
+    wallet.checkTransaction(rawTx);
+  } catch (e) {
+    console.error(e);
+  }
+
+  // Error: invalid transaction key: unicorn
+  const rawTxWithWrongKey = <TransactionRequest>{
+    ...rawTx,
+    from: "0x9d8A62f656a8d1615C1294fd71e9CFb3E4855A4F",
+    unicorn: "Jerry",
+  };
+
+  try {
+    wallet.checkTransaction(rawTxWithWrongKey);
+  } catch (e) {
+    console.error(e);
+  }
 })();
