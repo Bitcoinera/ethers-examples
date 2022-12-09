@@ -41,12 +41,9 @@ const addressFromPrivateKey = ethers.utils.computeAddress(
 console.log("Comparing that both addresses are the same");
 expect(addressFromPrivateKey).to.equal(address);
 
-console.log(
-  "Validate that the signing account public key matches the sender of a transaction"
-);
-// Sign, send and validate the sender of a transaction
-(async () => {
+async function getTransactionUtils() {
   const wallet = new ethers.Wallet(signingKey.privateKey);
+
   const rawTx = {
     to: "0xddB51f100672Cb252C67D516eb79931bf27cE3E6",
     value: ethers.utils.parseEther("0.001"),
@@ -54,8 +51,17 @@ console.log(
     nonce: await provider.getTransactionCount(wallet.address),
     gasLimit: 25000,
     gasPrice: await provider.getGasPrice(),
+    from: "0xddddddddddddddddddddddddddddddddddddd6",
   };
+  return { wallet, rawTx };
+}
 
+console.log(
+  "Validate that the signing account public key matches the sender of a transaction"
+);
+// Sign, send and validate the sender of a transaction
+(async () => {
+  const { wallet, rawTx } = await getTransactionUtils();
   const signedTx = await wallet.signTransaction(rawTx);
   console.log(`signedTx: ${signedTx}\n`);
 
@@ -74,35 +80,43 @@ console.log(
 
 // Errors in the transaction verification
 (async () => {
-  const wallet = new ethers.Wallet(signingKey.privateKey);
+  const { wallet, rawTx } = await getTransactionUtils();
 
   // Validate the from field before signing and sending the transaction
   // Error: from address mismatch
-  const rawTx = {
-    to: "0xddB51f100672Cb252C67D516eb79931bf27cE3E6",
-    value: ethers.utils.parseEther("0.001"),
-    data: ethers.utils.toUtf8Bytes("Hello World"),
-    nonce: await provider.getTransactionCount(wallet.address),
-    gasLimit: 25000,
-    gasPrice: await provider.getGasPrice(),
+  const rawTxWrongFrom = {
+    ...rawTx,
     from: "0xddddddddddddddddddddddddddddddddddddd6",
   };
 
   try {
-    wallet.checkTransaction(rawTx);
+    wallet.checkTransaction(rawTxWrongFrom);
   } catch (e) {
     console.error(e);
   }
 
   // Error: invalid transaction key: unicorn
-  const rawTxWithWrongKey = <TransactionRequest>{
+  const rawTxWrongKey = <TransactionRequest>{
     ...rawTx,
     from: "0x9d8A62f656a8d1615C1294fd71e9CFb3E4855A4F",
     unicorn: "Jerry",
   };
 
   try {
-    wallet.checkTransaction(rawTxWithWrongKey);
+    wallet.checkTransaction(rawTxWrongKey);
+  } catch (e) {
+    console.error(e);
+  }
+
+  // Error: insufficient funds for transfer
+  const rawTxNotEnoughFunds = <TransactionRequest>{
+    ...rawTx,
+    from: "0x9d8A62f656a8d1615C1294fd71e9CFb3E4855A4F",
+    value: ethers.utils.parseEther("1000.00"),
+  };
+
+  try {
+    provider.estimateGas(rawTxNotEnoughFunds);
   } catch (e) {
     console.error(e);
   }
