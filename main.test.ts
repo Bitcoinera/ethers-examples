@@ -1,4 +1,3 @@
-import { TransactionRequest } from "@ethersproject/abstract-provider";
 import * as ethers from "ethers";
 import { BytesLike } from "ethers";
 
@@ -68,33 +67,61 @@ describe("transaction checks", () => {
     const minedTx = await provider.getTransaction(tx.hash);
     expect(minedTx.from).toEqual(wallet.address);
   });
-  it.only("errors with 'from address mismatch'", async () => {
-    const rawTxWrongFrom = {
-      ...rawTx,
-      from: "0xddddddddddddddddddddddddddddddddddddd6",
-    };
-    await expect(async () => {
-      await wallet.checkTransaction(rawTxWrongFrom);
-    }).rejects.toThrow(TypeError("from address mismatch"));
+
+  it("errors with 'from address mismatch'", async () => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        await wallet.signTransaction({
+          from: "0x3f4f037dfc910a3517b9a5b23cf036ffae01a5a7",
+        });
+      } catch (error) {
+        if (
+          error.code === ethers.utils.Logger.errors.INVALID_ARGUMENT &&
+          error.argument === "transaction.from"
+        ) {
+          resolve(true);
+          return;
+        }
+      }
+      reject(new Error("From address mismatch did not throw"));
+    });
   });
+
   it("errors with 'invalid transaction key: unicorn'", () => {
-    const rawTxWrongKey = <TransactionRequest>{
-      ...rawTx,
-      from: "0x9d8A62f656a8d1615C1294fd71e9CFb3E4855A4F",
-      unicorn: "Jerry",
-    };
-    expect(wallet.checkTransaction(rawTxWrongKey)).toThrow(
-      "invalid transaction key: unicorn"
-    );
+    return new Promise(async (resolve, reject) => {
+      try {
+        await wallet.signTransaction({
+          unicorn: "Jerry",
+        });
+      } catch (error) {
+        if (
+          error.code === ethers.utils.Logger.errors.INVALID_ARGUMENT &&
+          error.argument === "transaction:unicorn"
+        ) {
+          resolve(true);
+          return;
+        }
+      }
+      reject(new Error("Invalid transaction key did not throw"));
+    });
   });
-  it("errors with 'insufficient funds for transfer'", () => {
-    const rawTxNotEnoughFunds = <TransactionRequest>{
-      ...rawTx,
-      from: "0x9d8A62f656a8d1615C1294fd71e9CFb3E4855A4F",
-      value: ethers.utils.parseEther("1000.00"),
-    };
-    expect(provider.estimateGas(rawTxNotEnoughFunds)).toThrow(
-      "insufficient funds for transfer"
-    );
+
+  it.skip("errors with 'insufficient funds for transfer'", async () => {
+    const sendWallet = ethers.Wallet.createRandom();
+    return new Promise(async (resolve, reject) => {
+      try {
+        const tx = await sendWallet.sendTransaction({
+          to: "0xddb51f100672cb252c67d516eb79931bf27ce3e6",
+          value: ethers.utils.parseEther("1000"),
+        });
+      } catch (error) {
+        console.log(error);
+        if (error.code === ethers.utils.Logger.errors.INSUFFICIENT_FUNDS) {
+          resolve(true);
+          return;
+        }
+      }
+      reject(new Error("Insufficient funds did not throw"));
+    });
   });
 });
